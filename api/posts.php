@@ -12,12 +12,14 @@ $file = "../data/posts.json";
 
 // Authorization
 if( $_SERVER["REQUEST_METHOD"] != "GET" ){
+
     if( !isset( $_SESSION["id"] ) ){
-        header("HTTP/1.1 401 Unauthorized");
+        // header("HTTP/1.1 401 Unauthorized");
         $response = new stdClass( );
         $response->errors = ["Not logged in."];
 
         echo json_encode( $response );
+        exit();
     }
 }
 
@@ -77,37 +79,59 @@ if( $_SERVER["REQUEST_METHOD"] == "POST" ) {
     echo json_encode($response);
 }
 
-if( $_SERVER["REQUEST_METHOD"] == "PUT" ) {
-    if( is_file( $file ) ){
-        $data = json_decode( file_get_contents( "php://input" ) );
+// if( $_SERVER["REQUEST_METHOD"] == "PUT" ) {
+//     if( is_file( $file ) ){
+//         $data = json_decode( file_get_contents( "php://input" ) );
     
-        $posts = json_decode( file_get_contents( $file ), true );
+//         $posts = json_decode( file_get_contents( $file ), true );
 
-        $post = $posts[intval( $data->id )];
+//         $post = $posts[intval( $data->id )];
 
-        foreach ( $data as $key => $value ) {
-            $post[$key] = $value;
-        }
+//         foreach ( $data as $key => $value ) {
+//             $post[$key] = $value;
+//         }
 
-        $posts[intval( $data->id )] = $post;
+//         $posts[intval( $data->id )] = $post;
         
-        file_put_contents( $file, json_encode( $posts ) );
-    }
-}
+//         file_put_contents( $file, json_encode( $posts ) );
+//     }
+// }
 
 if( $_SERVER["REQUEST_METHOD"] == "DELETE" ) {
     if( is_file( $file ) ){
+        $response = new stdClass( );
+        $response->errors = [];
+
         $post = json_decode( file_get_contents( "php://input" ) );
-    
+        $postIndex = $post->id-1;
+
         $posts = json_decode( file_get_contents( $file ) );
 
-        array_splice( $posts, intval( $post->id ), 1 );
+        if( $postIndex < 0 || $postIndex >= count($posts) ){
+            array_push( $response->errors, "Specified post does not exist." );
 
-        for( $i = 0; $i < count( $posts ); $i++ ){
-            $posts[$i]->id = $i+1;
+        } else {
+            $post = $posts[$postIndex];
+
+            if( $post->userId != $_SESSION[ "id" ] ){
+
+                header("HTTP/1.1 401 Unauthorized");
+                array_push( $response->errors, "Unauthorized." );
+    
+            }
         }
 
-        file_put_contents( $file, json_encode( $posts ) );
+        if( count( $response->errors ) == 0 ){
+            array_splice( $posts, intval( $postIndex ), 1 );
+
+            for( $i = 0; $i < count( $posts ); $i++ ){
+                $posts[$i]->id = $i+1;
+            }
+
+            file_put_contents( $file, json_encode( $posts ) );
+        }
+
+        echo json_encode( $response );
     }
 }
 
