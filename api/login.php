@@ -1,5 +1,7 @@
 <?php
-header( "Access-Control-Allow-Origin: http://localhost:3001" );
+include_once( "../config.php" );
+
+header( "Access-Control-Allow-Origin: " . FRONT_END_URL );
 header( "Access-Control-Allow-Credentials: true" );
 header( "Access-Control-Allow-Methods: GET, DELETE, PUT" );
 header( "Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept" );
